@@ -17,6 +17,7 @@ user_bp = Blueprint("users", __name__)
 @jwt_required()
 @staff_required
 def get_users():
+    
     users = db.get_data_table("users")
     return jsonify(users), 200
 

@@ -17,12 +17,13 @@ def token():
             
             }), 400
     user = db.get_user_by_email(data.get("email"))
-    check_password = bcrypt.checkpw(data.get("password").encode('utf8'), user.get("password").encode('utf8'))
-    if not user or not check_password:
-        return jsonify({
-            "success": -1,
-            "msg": "Wrong email or password"
-            }), 401
+    if user :
+        check_password = bcrypt.checkpw(data.get("password").encode('utf8'), user.get("password").encode('utf8'))
+        if not check_password:
+            return jsonify({
+                "success": -1,
+                "msg": "Wrong email or password"
+                }), 401
     return jsonify({
         "success": 1,
         "access_token": create_access_token(identity=data.get("email"))})

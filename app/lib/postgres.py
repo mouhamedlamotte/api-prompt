@@ -6,9 +6,9 @@ load_dotenv()
 class Postgres() :
     def __init__(self) -> None:
         self.connect =  psycopg2.connect(
-            user = "postgres",
+            user = "ktmlee",
             database = "promptmaster",
-            password = os.getenv("POSTGRES_PASSWORD"),
+            password = "pass",
             host = "localhost",
         )
         self.cursor = self.connect.cursor()
@@ -88,4 +88,4 @@ class Postgres() :
                 return None
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
-            return False
+            return False 
