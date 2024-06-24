@@ -27,8 +27,8 @@ class Postgres() :
         );
         """
 
-        create_prompt_table_query = """CREATE TABLE IF NOT EXISTS prompt
-            Prompt_id SERIAL PRIMARY KEY,
+        create_prompt_table_query = """CREATE TABLE IF NOT EXISTS prompt(
+            prompt_id SERIAL PRIMARY KEY,
             title VARCHAR(250) UNIQUE NOT NULL,
             text VARCHAR(250) NOT NULL,
             tags VARCHAR(100),
@@ -36,10 +36,10 @@ class Postgres() :
             state varchar(10),
             vote integer,
             created_at TIMESTAMP DEFAULT NOW(),
-            constraint fk_uid foreign key(fk_uid) references users(uid)
+            uid INT,
+            constraint fk_uid foreign key(uid) references users(uid)
         );
         """
-        self.cursor.execute(create_user_table_query,create_prompt_table_query)
 
         create_group_table_query = """CREATE TABLE IF NOT EXISTS groups (
                     group_id SERIAL PRIMARY KEY,
@@ -59,6 +59,7 @@ class Postgres() :
         self.cursor.execute(create_user_table_query)
         self.cursor.execute(create_group_table_query)
         self.cursor.execute(create_group_members_table_query)
+        self.cursor.execute(create_prompt_table_query)
 
         self.connect.commit()
     

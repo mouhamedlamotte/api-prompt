@@ -23,7 +23,7 @@ def get_prompt():
 def createPrompt():
     try :
         data =  request.get_json()
-        if not data.get("title") and not data.get("text")and not data.get("tags") and not data.get("price")and not data.get("state"):
+        if not data.get("title") and not data.get("text") and not data.get("tags") and not data.get("price")and not data.get("state"):
             return jsonify({
                 "success" : -1,
                 "msg" : "veuillez fournir les informations ",
