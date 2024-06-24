@@ -6,9 +6,9 @@ load_dotenv()
 class Postgres() :
     def __init__(self) -> None:
         self.connect =  psycopg2.connect(
-            user = "ktmlee",
+            user = os.getenv("POSTGRES_USER"),
             database = "promptmaster",
-            password = "pass",
+            password = os.getenv("POSTGRES_PASSWORD"),
             host = "localhost",
         )
         self.cursor = self.connect.cursor()
@@ -26,7 +26,24 @@ class Postgres() :
             last_login TIMESTAMP
         );
         """
+        create_group_table_query = """CREATE TABLE IF NOT EXISTS groups (
+                    group_id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) UNIQUE NOT NULL,
+                    created_by INT,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(uid)
+                );
+            """
+        create_group_members_table_query = """CREATE TABLE IF NOT EXISTS group_members(
+                gm_id SERIAL PRIMARY KEY,
+                uid INT,
+                group_id INT,
+                CONSTRAINT fk_uid FOREIGN KEY(uid) REFERENCES users(uid),
+                CONSTRAINT fk_group_id FOREIGN KEY(group_id) REFERENCES groups(group_id)
+            );"""
         self.cursor.execute(create_user_table_query)
+        self.cursor.execute(create_group_table_query)
+        self.cursor.execute(create_group_members_table_query)
         self.connect.commit()
     
     def create_user(self, email, password,**kwargs ):
@@ -51,10 +68,8 @@ class Postgres() :
             rows = self.cursor.fetchall()
             
             if rows:
-                # Obtenir les noms des colonnes
                 colnames = [desc[0] for desc in self.cursor.description]
                 
-                # Créer une liste de dictionnaires
                 data_list = [dict(zip(colnames, row)) for row in rows]
                 
                 return data_list
@@ -64,6 +79,14 @@ class Postgres() :
             print("Une erreur s'est produite dans la fonction get_data_table de la classe postgres ==> \n", e)
             return False
 
+    def get_user_by_id(self, uid):
+        try :
+            query = """SELECT * FROM users WHERE uid = %s"""
+            self.cursor.execute(query, (uid,))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_user_by_id de la classe postgres ==> \n", e)
+            return False
     
     def get_user_by_email_and_password(self, email,password):
         try :
@@ -89,3 +112,60 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
             return False 
+    
+    def create_group(self, name, created_by):
+        try :
+            query ="""INSERT INTO groups(name, created_by) VALUES (%s, %s)"""
+            values = (name, created_by)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "Group cree avec success"
+        except psycopg2.errors.UniqueViolation as e :
+            return False, "Un groupe avec ce nom existe deja"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction create_group de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer"
+    def get_group_by_id(self, group_id):
+        try :
+            query = """SELECT * FROM groups WHERE group_id = %s"""
+            self.cursor.execute(query, (group_id,))
+            return self.cursor.fetchall()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_group_by_id de la class postgres ==> \n", e)
+        
+    def get_group_member_by_uid(self, uid): 
+        try : 
+            query = """SELECT * FROM group_members WHERE uid = %s"""
+            self.cursor.execute(query, (uid,))
+            return self.cursor.fetchall()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_group_member_by_uid de la classe postgres ==> \n", e)
+            return False
+    
+    def get_group_member_by_gid(self, group_id):
+        try :
+            query = """SELECT * FROM group_members WHERE group_id = %s"""
+            self.cursor.execute(query, (group_id,))
+            rows = self.cursor.fetchall()
+            if rows:
+                colnames = [desc[0] for desc in self.cursor.description]
+                
+                data_list = [dict(zip(colnames, row)) for row in rows]
+                
+                return data_list
+            else:
+                return []
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_group_member_by_gid de la classe postgres ==> \n", e)
+            return False
+    
+    def add_member (self, uid, group_id):
+        try :
+            query = """INSERT INTO group_members(uid, group_id) VALUES (%s, %s)"""
+            values = (uid, group_id)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "Membre ajoute avec success"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction add_member de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer"

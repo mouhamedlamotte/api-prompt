@@ -11,6 +11,7 @@ from app.auth.authorization.decorators import staff_required, superuser_required
 
 from .users.routes import user_bp
 from .auth.routes import auth_bp
+from .group.routes import group_bp
 
 
 load_dotenv()
@@ -24,6 +25,7 @@ jwt = JWTManager(app)
 
 app.register_blueprint(user_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(group_bp)
 
 @app.route("/superuser")
 @jwt_required()
