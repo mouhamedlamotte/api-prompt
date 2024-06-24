@@ -26,7 +26,19 @@ class Postgres() :
             last_login TIMESTAMP
         );
         """
-        self.cursor.execute(create_user_table_query)
+        create_prompt_table_query = """CREATE TABLE IF NOT EXISTS prompt
+            Prompt_id SERIAL PRIMARY KEY,
+            title VARCHAR(250) UNIQUE NOT NULL,
+            text VARCHAR(250) NOT NULL,
+            tags VARCHAR(100),
+            price integer,
+            state varchar(10),
+            vote integer,
+            created_at TIMESTAMP DEFAULT NOW(),
+            constraint fk_uid foreign key(fk_uid) references users(uid)
+        );
+        """
+        self.cursor.execute(create_user_table_query,create_prompt_table_query)
         self.connect.commit()
     
     def create_user(self, email, password,**kwargs ):
@@ -89,3 +101,5 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
             return False 
+        
+        
