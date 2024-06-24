@@ -1,14 +1,15 @@
 import os
 
 import psycopg2
-from dotenv import load_dotenv
-load_dotenv()
+
+from constant import FLASK_SECRET_KEY, POSTGRES_PASSWORD
+
 class Postgres() :
     def __init__(self) -> None:
         self.connect =  psycopg2.connect(
-            user = os.getenv("POSTGRES_USER"),
+            user = POSTGRES_PASSWORD,
             database = "promptmaster",
-            password = os.getenv("POSTGRES_PASSWORD"),
+            password = POSTGRES_PASSWORD,
             host = "localhost",
         )
         self.cursor = self.connect.cursor()
