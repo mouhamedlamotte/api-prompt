@@ -17,10 +17,10 @@ prompt_bp = Blueprint("prompt", __name__)
 def createPrompt():
     try :
         data =  request.get_json()
-        if not data.get("title") and not data.get("text"),:
+        if not data.get("title") and not data.get("text")and not data.get("tags") and not data.get("price")and not data.get("state"):
             return jsonify({
                 "success" : -1,
-                "msg" : "veuillez fournir un nom et une description",
+                "msg" : "veuillez fournir les informations ",
             }), 403
         res, msg = db.create_prompt(**data)
         if res == False :
@@ -31,7 +31,7 @@ def createPrompt():
         return jsonify(
             {
                 "success" : 1,
-                "msg" : f"le prompt {data.get('nom')} a ete cree avec success",
+                "msg" : f"le prompt {data.get('title')} a ete cree avec success",
             }
         ), 201
     except Exception as e :
