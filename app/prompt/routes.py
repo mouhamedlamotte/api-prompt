@@ -20,7 +20,7 @@ def get_prompt():
 
 
 @prompt_bp.route("/prompt", methods=["POST"])
-def createPrompt():
+def create_prompt():
     try :
         data =  request.get_json()
         if not data.get("title") and not data.get("text") and not data.get("tags") and not data.get("price")and not data.get("state"):

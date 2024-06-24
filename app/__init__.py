@@ -2,6 +2,8 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
+from constant import FLASK_SECRET_KEY
+
 from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
@@ -19,7 +21,7 @@ load_dotenv()
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY")
+app.config["SECRET_KEY"] = FLASK_SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=5)
 CORS(app)
 jwt = JWTManager(app)
