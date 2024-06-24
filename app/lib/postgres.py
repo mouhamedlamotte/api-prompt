@@ -26,6 +26,21 @@ class Postgres() :
             last_login TIMESTAMP
         );
         """
+
+        create_prompt_table_query = """CREATE TABLE IF NOT EXISTS prompt
+            Prompt_id SERIAL PRIMARY KEY,
+            title VARCHAR(250) UNIQUE NOT NULL,
+            text VARCHAR(250) NOT NULL,
+            tags VARCHAR(100),
+            price integer,
+            state varchar(10),
+            vote integer,
+            created_at TIMESTAMP DEFAULT NOW(),
+            constraint fk_uid foreign key(fk_uid) references users(uid)
+        );
+        """
+        self.cursor.execute(create_user_table_query,create_prompt_table_query)
+
         create_group_table_query = """CREATE TABLE IF NOT EXISTS groups (
                     group_id SERIAL PRIMARY KEY,
                     name VARCHAR(100) UNIQUE NOT NULL,
@@ -44,6 +59,7 @@ class Postgres() :
         self.cursor.execute(create_user_table_query)
         self.cursor.execute(create_group_table_query)
         self.cursor.execute(create_group_members_table_query)
+
         self.connect.commit()
     
     def create_user(self, email, password,**kwargs ):
@@ -112,6 +128,23 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
             return False 
+
+        
+    def create_prompt(self, title, text,**kwargs ):
+        try :
+            query = """INSERT INTO prompt(title,text,tags,price,state,vote)
+                       VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+            values  = (title, text, kwargs.get("tags"), kwargs.get("price"), kwargs.get("state", False), kwargs.get("vote", False))
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "prompt cree avec success"
+        except psycopg2.errors.UniqueViolation as e :
+            return False, "Un prompt avec ce titre existe deja"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction create_prompt de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer" 
+
     
     def create_group(self, name, created_by):
         try :
