@@ -11,6 +11,12 @@ from app.lib import db
 
 
 prompt_bp = Blueprint("prompt", __name__)
+@prompt_bp.route("/prompt",methods=["GET"])
+@jwt_required()
+def get_prompt(): 
+    prompt = db.get_data_table("prompt")
+    print(prompt)
+    return jsonify(prompt), 200
 
 
 @prompt_bp.route("/prompt", methods=["POST"])
@@ -22,23 +28,18 @@ def createPrompt():
                 "success" : -1,
                 "msg" : "veuillez fournir les informations ",
             }), 403
-        res, msg = db.create_prompt(**data)
-        if res == False :
-            return jsonify({
-                "success" : -1,
-                "msg" : msg,
-            }), 403
-        return jsonify(
-            {
-                "success" : 1,
-                "msg" : f"le prompt {data.get('title')} a ete cree avec success",
-            }
-        ), 201
-    except Exception as e :
-        print("Une erreur s'est produite dans la fonction create_prompt de la route prompt ==> \n", e)
-        return jsonify({
-                "success" : -1,
-                "msg" : "Une erreur s'est produite , veuillez reesayer",
-        }), 500
+         # Vérification si des données ont été trouvées
+        if data is None:
+            return jsonify({"message": "Aucune donnée trouvée dans la table 'prompt'."}), 404
+        
+        # Affichage des données dans la console pour le débogage
+        print(data)
+        
+        # Renvoi des données au format JSON
+        return jsonify(data), 200
+    except Exception as e:
+        # Gestion des erreurs
+        print(f"Erreur lors de la récupération des données: {e}")
+        return jsonify({"message": "Une erreur s'est produite lors de la récupération des données."}), 500
     
     

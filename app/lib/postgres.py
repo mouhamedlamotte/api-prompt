@@ -102,4 +102,17 @@ class Postgres() :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
             return False 
         
-        
+    def create_prompt(self, title, text,**kwargs ):
+        try :
+            query = """INSERT INTO prompt(title,text,tags,price,state,vote)
+                       VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+            values  = (title, text, kwargs.get("tags"), kwargs.get("price"), kwargs.get("state", False), kwargs.get("vote", False))
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "prompt cree avec success"
+        except psycopg2.errors.UniqueViolation as e :
+            return False, "Un prompt avec ce titre existe deja"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction create_prompt de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer" 
