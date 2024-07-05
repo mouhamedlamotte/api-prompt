@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
 from app.auth.authorization.decorators import superuser_required
-from app.lib import db
+from app.lib import db, send_email
 
 
 
@@ -36,6 +36,7 @@ def create_user():
                 "success" : -1,
                 "msg" : msg,
             }), 403
+        send_email(data, "http://127.0.0.1:5000/confirm-email")
         return jsonify(
             {
                 "success" : 1,
@@ -48,3 +49,5 @@ def create_user():
                 "success" : -1,
                 "msg" : "Une erreur s'est produite , veuillez reesayer",
         }), 500
+        
+        
