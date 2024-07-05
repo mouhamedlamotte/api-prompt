@@ -21,6 +21,10 @@ class Postgres() :
         with open('schema.sql') as f:
             self.cursor.execute(f.read())
             self.connect.commit()
+    def migrate(self):
+        with open('migrations.sql') as f:
+            self.cursor.execute(f.read())
+            self.connect.commit()
     
     def create_user(self, email, password, **kwargs ):
         try :

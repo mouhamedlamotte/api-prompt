@@ -9,15 +9,16 @@ from flask_jwt_extended import JWTManager
 
 
 
-from .users.routes import user_bp
-from .auth.routes import auth_bp
-from .prompts.routes import prompt_bp
-from .group.routes import group_bp
-from app.lib.postgres import Postgres
+from .users import user_bp
+from .auth import auth_bp
+from .prompts import prompt_bp
+from .group import group_bp
 
-db = Postgres()
 
-import click
+from .command import init_db_command, migrate_command
+
+
+
 
 load_dotenv()
 
@@ -39,8 +40,6 @@ app.register_blueprint(group_bp, url_prefix="/groups")
 
 
 with app.app_context():
-    @click.command('init-db')
-    def init_db_command():
-        db.init_db()
-        click.echo('Initialized the database.')
     app.cli.add_command(init_db_command)
+    app.cli.add_command(migrate_command)
+    
