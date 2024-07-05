@@ -1,44 +1,46 @@
 from datetime import timedelta
-import os
 from dotenv import load_dotenv
 
 from constant import FLASK_SECRET_KEY
 
 from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
+from flask_jwt_extended import JWTManager
 
-from app.auth.authorization.decorators import staff_required, superuser_required
 
 
 from .users.routes import user_bp
 from .auth.routes import auth_bp
-from .prompt.routes import prompt_bp
+from .prompts.routes import prompt_bp
 from .group.routes import group_bp
+from app.lib.postgres import Postgres
 
+db = Postgres()
+
+import click
 
 load_dotenv()
 
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = FLASK_SECRET_KEY
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=5)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
+
 CORS(app)
+
 jwt = JWTManager(app)
 
-app.register_blueprint(user_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(prompt_bp)
-app.register_blueprint(group_bp)
+app.register_blueprint(user_bp, url_prefix="/users")
+app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(prompt_bp, url_prefix="/prompts")
+app.register_blueprint(group_bp, url_prefix="/groups")
 
-@app.route("/superuser")
-@jwt_required()
-@superuser_required  
-def superuser():
-    return "You are seeing this because you are a superuser"
 
-@app.route("/staff")
-@jwt_required()
-@staff_required
-def staff():
-    return get_jwt_identity()
+
+
+with app.app_context():
+    @click.command('init-db')
+    def init_db_command():
+        db.init_db()
+        click.echo('Initialized the database.')
+    app.cli.add_command(init_db_command)

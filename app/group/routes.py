@@ -6,9 +6,9 @@ from app.auth.authorization.decorators import superuser_required
 from app.lib import db
 
 
-group_bp = Blueprint("group", __name__)
+group_bp = Blueprint("groups", __name__)
 
-@group_bp.route("/group", methods=["POST"])
+@group_bp.route("/new", methods=["POST"])
 @jwt_required()
 @superuser_required
 def create_group():
@@ -31,7 +31,7 @@ def create_group():
         "msg": f"Le groupe {data.get('name')} a ete cree avec success"
     }), 201
 
-@group_bp.route("/groups", methods=["GET"])
+@group_bp.route("/", methods=["GET"])
 @jwt_required()
 @superuser_required
 def get_groups():
@@ -57,10 +57,16 @@ def add_member():
             "msg" : "User id (uid) and group (group_id) id required"
         })
     check_if_user_exist = db.get_user_by_id(data.get("uid"))
+    print(check_if_user_exist)
     if not check_if_user_exist :
         return jsonify({
             "success" : -1,
             "msg" : "User does not exist"
+        })
+    if check_if_user_exist.get("is_superuser"):
+        return jsonify({
+            "success" : -1,
+            "msg" : "Admin cannot be added to a group"
         })
     
     check_if_group_exist = db.get_group_by_id(data.get("group_id"))

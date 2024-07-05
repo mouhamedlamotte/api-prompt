@@ -1,70 +1,28 @@
-import os
+import psycopg
 
-import psycopg2
+from constant import  POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB
 
-from constant import FLASK_SECRET_KEY, POSTGRES_PASSWORD
+from psycopg.rows import dict_row
+
+
+
 
 class Postgres() :
     def __init__(self) -> None:
-        self.connect =  psycopg2.connect(
-            user = POSTGRES_PASSWORD,
-            database = "promptmaster",
-            password = POSTGRES_PASSWORD,
-            host = "localhost",
+        self.connect =  psycopg.connect(
+            'postgres://{}:{}@localhost:5432/{}'.format(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB),
+            row_factory = dict_row,
+            autocommit=True
         )
         self.cursor = self.connect.cursor()
         
+        
     def init_db(self):
-        create_user_table_query = """CREATE TABLE IF NOT EXISTS users(
-            uid SERIAL PRIMARY KEY,
-            email VARCHAR(250) UNIQUE NOT NULL,
-            password VARCHAR(250) NOT NULL,
-            first_name VARCHAR(100),
-            last_name VARCHAR(100),
-            is_superuser BOOL DEFAULT FALSE,
-            is_staff BOOL DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT NOW(),
-            last_login TIMESTAMP
-        );
-        """
-
-        create_prompt_table_query = """CREATE TABLE IF NOT EXISTS prompt(
-            prompt_id SERIAL PRIMARY KEY,
-            title VARCHAR(250) UNIQUE NOT NULL,
-            text VARCHAR(250) NOT NULL,
-            tags VARCHAR(100),
-            price integer,
-            state varchar(10),
-            vote integer,
-            created_at TIMESTAMP DEFAULT NOW(),
-            uid INT,
-            constraint fk_uid foreign key(uid) references users(uid)
-        );
-        """
-
-        create_group_table_query = """CREATE TABLE IF NOT EXISTS groups (
-                    group_id SERIAL PRIMARY KEY,
-                    name VARCHAR(100) UNIQUE NOT NULL,
-                    created_by INT,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(uid)
-                );
-            """
-        create_group_members_table_query = """CREATE TABLE IF NOT EXISTS group_members(
-                gm_id SERIAL PRIMARY KEY,
-                uid INT,
-                group_id INT,
-                CONSTRAINT fk_uid FOREIGN KEY(uid) REFERENCES users(uid),
-                CONSTRAINT fk_group_id FOREIGN KEY(group_id) REFERENCES groups(group_id)
-            );"""
-        self.cursor.execute(create_user_table_query)
-        self.cursor.execute(create_group_table_query)
-        self.cursor.execute(create_group_members_table_query)
-        self.cursor.execute(create_prompt_table_query)
-
-        self.connect.commit()
+        with open('schema.sql') as f:
+            self.cursor.execute(f.read())
+            self.connect.commit()
     
-    def create_user(self, email, password,**kwargs ):
+    def create_user(self, email, password, **kwargs ):
         try :
             query = """INSERT INTO users(email, password, first_name, last_name, is_superuser, is_staff)
                        VALUES (%s, %s, %s, %s, %s, %s)
@@ -73,26 +31,17 @@ class Postgres() :
             self.cursor.execute(query, values)
             self.connect.commit()
             return True, "Utilisateur cree avec success"
-        except psycopg2.errors.UniqueViolation as e :
+        except psycopg.errors.UniqueViolation as e :
             return False, "Un utilisateur avec cet email existe deja"
         except Exception as e :
             print("Une erreur s'est produite dans la fonction create_user de la classe postgres ==> \n", e)
-            return False, "Une erreur s'est produite , veuillez reesayer" 
+            return False, "Une erreur s'est produite , veuillez reesayer"
     
     def get_data_table(self, table_name):
         try:
             query = f"SELECT * FROM {table_name}"
             self.cursor.execute(query)
-            rows = self.cursor.fetchall()
-            
-            if rows:
-                colnames = [desc[0] for desc in self.cursor.description]
-                
-                data_list = [dict(zip(colnames, row)) for row in rows]
-                
-                return data_list
-            else:
-                return []
+            return self.cursor.fetchall()
         except Exception as e:
             print("Une erreur s'est produite dans la fonction get_data_table de la classe postgres ==> \n", e)
             return False
@@ -119,34 +68,33 @@ class Postgres() :
         try :
             query = """SELECT * FROM users WHERE email = %s"""
             self.cursor.execute(query, (email,))
-            row = self.cursor.fetchone()
-        
-            if row:
-                colnames = [desc[0] for desc in self.cursor.description]
-                user_dict = dict(zip(colnames, row))
-                return user_dict
-            else:
-                return None
+            return self.cursor.fetchone()
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_user_by_email de la classe postgres ==> \n", e)
             return False 
 
         
-    def create_prompt(self, title, text,**kwargs ):
+    def create_prompt(self, title, text, created_by, **kwargs ):
         try :
-            query = """INSERT INTO prompt(title,text,tags,price,state,vote)
-                       VALUES (%s, %s, %s, %s, %s, %s)
+            query = """INSERT INTO prompts(title ,text,created_by, tags)
+                       VALUES (%s, %s, %s, %s)
                     """
-            values  = (title, text, kwargs.get("tags"), kwargs.get("price"), kwargs.get("state", False), kwargs.get("vote", False))
+            values  = (title, text, created_by, kwargs.get("tags"))
             self.cursor.execute(query, values)
             self.connect.commit()
             return True, "prompt cree avec success"
-        except psycopg2.errors.UniqueViolation as e :
-            return False, "Un prompt avec ce titre existe deja"
         except Exception as e :
             print("Une erreur s'est produite dans la fonction create_prompt de la classe postgres ==> \n", e)
             return False, "Une erreur s'est produite , veuillez reesayer" 
-
+        
+    def get_prompt_by_id(self, prompt_id):
+        try :
+            query = """SELECT * FROM prompts WHERE prompt_id = %s"""
+            self.cursor.execute(query, (prompt_id,))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_prompt_by_id de la classe postgres ==> \n", e)
+            return False
     
     def create_group(self, name, created_by):
         try :
@@ -155,11 +103,12 @@ class Postgres() :
             self.cursor.execute(query, values)
             self.connect.commit()
             return True, "Group cree avec success"
-        except psycopg2.errors.UniqueViolation as e :
+        except psycopg.errors.UniqueViolation as e :
             return False, "Un groupe avec ce nom existe deja"
         except Exception as e :
             print("Une erreur s'est produite dans la fonction create_group de la classe postgres ==> \n", e)
             return False, "Une erreur s'est produite , veuillez reesayer"
+        
     def get_group_by_id(self, group_id):
         try :
             query = """SELECT * FROM groups WHERE group_id = %s"""
@@ -172,7 +121,7 @@ class Postgres() :
         try : 
             query = """SELECT * FROM group_members WHERE uid = %s"""
             self.cursor.execute(query, (uid,))
-            return self.cursor.fetchall()
+            return self.cursor.fetchone()
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_group_member_by_uid de la classe postgres ==> \n", e)
             return False
@@ -181,15 +130,7 @@ class Postgres() :
         try :
             query = """SELECT * FROM group_members WHERE group_id = %s"""
             self.cursor.execute(query, (group_id,))
-            rows = self.cursor.fetchall()
-            if rows:
-                colnames = [desc[0] for desc in self.cursor.description]
-                
-                data_list = [dict(zip(colnames, row)) for row in rows]
-                
-                return data_list
-            else:
-                return []
+            return self.cursor.fetchall()
         except Exception as e :
             print("Une erreur s'est produite dans la fonction get_group_member_by_gid de la classe postgres ==> \n", e)
             return False
@@ -204,3 +145,96 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction add_member de la classe postgres ==> \n", e)
             return False, "Une erreur s'est produite , veuillez reesayer"
+        
+        
+    def add_vote(self, uid, prompt_id, value=1):
+        try :
+            query = """INSERT INTO votes(uid, prompt_id, value) VALUES (%s, %s, %s)"""
+            values = (uid, prompt_id, value)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "Vote ajoute avec success"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction add_vote de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer"
+    
+    def add_note(self, uid, prompt_id, value):
+        try :
+            print(uid, prompt_id, value)
+            query = """INSERT INTO notes(uid, prompt_id, value) VALUES (%s, %s, %s)"""
+            values = (uid, prompt_id, value)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True, "Note ajoute avec success"
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction add_vote de la classe postgres ==> \n", e)
+            return False, "Une erreur s'est produite , veuillez reesayer"
+    
+    def get_vote_by_uid_and_pid(self, uid, prompt_id):
+        try :
+            query = """SELECT * FROM votes WHERE uid = %s AND prompt_id = %s"""
+            self.cursor.execute(query, (uid, prompt_id))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_vote_by_uid_and_pid de la classe postgres ==> \n", e)
+            return False
+        
+    def get_notes_by_uid_and_pid(self, uid, prompt_id):
+        try :
+            query = """SELECT * FROM notes WHERE uid = %s AND prompt_id = %s"""
+            self.cursor.execute(query, (uid, prompt_id))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_vote_by_uid_and_pid de la classe postgres ==> \n", e)
+            return False
+        
+    def get_sum_votes_by_pid(self, prompt_id):
+        try :
+            query = """SELECT SUM(value) FROM votes WHERE prompt_id = %s"""
+            self.cursor.execute(query, (prompt_id,))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_sum_votes_by_pid de la classe postgres ==> \n", e)
+            return False
+    
+    def get_avg_notes_by_pid(self, prompt_id):
+        try :
+            print("prompt id, ", prompt_id)
+            query = """SELECT AVG(value) FROM notes WHERE prompt_id = %s"""
+            self.cursor.execute(query, (prompt_id,))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_sum_votes_by_pid de la classe postgres ==> \n", e)
+            return False
+            
+    
+    def get_votes_by_pid(self, prompt_id):
+        try :
+            query = """SELECT * FROM votes WHERE prompt_id = %s"""
+            self.cursor.execute(query, (prompt_id,))
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_votes_by_pid de la classe postgres ==> \n", e)
+            return False
+        
+    def update_prompt_state(self, prompt_id, state):
+        try :
+            query = """UPDATE prompts SET state = %s WHERE prompt_id = %s"""
+            values = (state, prompt_id)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction update_prompt_state de la classe postgres ==> \n", e)
+            return False
+        
+    def update_prompt_price(self, prompt_id, price):
+        try :
+            query = """UPDATE prompts SET price = %s WHERE prompt_id = %s"""
+            values = (price, prompt_id)
+            self.cursor.execute(query, values)
+            self.connect.commit()
+            return True
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction update_prompt_state de la classe postgres ==> \n", e)
+            return False

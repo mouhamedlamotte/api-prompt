@@ -2,3 +2,10 @@
 .env
 **/__pycache__/
 **/**/__pycache__/
+__pycache__
+schema.sql
+sql/
+sql
+/sql
+.vscode
+prompts/script.js
