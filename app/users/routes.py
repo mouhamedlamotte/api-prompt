@@ -1,10 +1,16 @@
 import bcrypt
+import jwt
+from datetime import timedelta
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 
 from app.auth.authorization.decorators import superuser_required
-from app.lib import db, send_email
+from app.lib import db, _send_confirm_email
+
+from flask_jwt_extended import get_jwt_identity, create_access_token
+
+from constant import FLASK_SECRET_KEY
 
 
 
@@ -36,7 +42,10 @@ def create_user():
                 "success" : -1,
                 "msg" : msg,
             }), 403
-        send_email(data, "http://127.0.0.1:5000/confirm-email")
+        token = create_access_token(identity=data.get("email"), expires_delta=timedelta(minutes=1))
+        success_redirect = data.get("success_redirect", "/auth/confirm_success")
+        failure_redirect = data.get("failure_redirect", "/auth/confirm_failure")
+        _send_confirm_email(data, f"http://127.0.0.1:5000/auth/confirm-email?token={token}&success_redirect={success_redirect}&failure_redirect={failure_redirect}")
         return jsonify(
             {
                 "success" : 1,
@@ -49,5 +58,4 @@ def create_user():
                 "success" : -1,
                 "msg" : "Une erreur s'est produite , veuillez reesayer",
         }), 500
-        
-        
+

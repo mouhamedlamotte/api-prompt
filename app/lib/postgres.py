@@ -1,4 +1,5 @@
 import psycopg
+import json
 
 from constant import  POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB
 
@@ -40,6 +41,16 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction create_user de la classe postgres ==> \n", e)
             return False, "Une erreur s'est produite , veuillez reesayer"
+        
+    def confirm_email(self, email):
+        try :
+            query = """UPDATE users SET emailVerified = true WHERE email = %s"""
+            self.cursor.execute(query, (email,))
+            self.connect.commit()
+            return True
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction confirm_email de la classe postgres ==> \n", e)
+            return False
     
     def get_data_table(self, table_name):
         try:
@@ -231,7 +242,9 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction update_prompt_state de la classe postgres ==> \n", e)
             return False
+    
         
+    
     def update_prompt_price(self, prompt_id, price):
         try :
             query = """UPDATE prompts SET price = %s WHERE prompt_id = %s"""
@@ -241,4 +254,16 @@ class Postgres() :
             return True
         except Exception as e :
             print("Une erreur s'est produite dans la fonction update_prompt_state de la classe postgres ==> \n", e)
+            return False
+        
+    def add_transaction(self, buyer_info : dict, prompt_id: int, amount: int) -> bool:
+        try :
+            buyer_info_json = json.dumps(buyer_info, indent=1)
+            print(buyer_info_json)
+            query = """INSERT INTO transactions(buyer_info, prompt_id, amount) VALUES (%s, %s, %s)"""
+            values = ([buyer_info_json, prompt_id, amount])
+            self.cursor.execute(query, values)
+            return True
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction add_transaction de la classe postgres ==> \n", e)
             return False

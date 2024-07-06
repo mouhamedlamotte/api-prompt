@@ -241,7 +241,7 @@ def get_confirm_email_template (username, confirm_url):
     """
     return template
 
-def send_email(user, url):
+def _send_confirm_email(user, url):
   try :
       msg = Message(
       'Confirm your email address',
@@ -254,3 +254,17 @@ def send_email(user, url):
   except Exception as e :
       print("Une erreur s'est produite dans la fonction send_email de la classe mail ==> \n", e)
       return False
+    
+def send_mail(message : dict) -> bool:
+  try :
+    msg = Message(
+      message.get("subject", "Email from Prompt Matster"),
+      sender='lamottelymouhamed@gmail.com',
+      recipients=[message.get("to", "lamottelymouhamed@gmail.com")],
+      html=message.get("html", "<h1>Hello</h1>"),
+    )
+    mail.send(msg)
+    return True
+  except Exception as e :
+    print("Une erreur s'est produite dans la fonction send_email de la classe mail ==> \n", e)
+    return False

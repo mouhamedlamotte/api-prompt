@@ -28,3 +28,15 @@ def superuser_required(f):
             "success": -1,
             "msg": "Unauthorized"}), 401
     return decorated
+
+def mail_confirmed_required(f):
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        email = get_jwt_identity()
+        user = db.get_user_by_email(email)
+        if user and user.get("emailverified"): 
+            return f(*args, **kwargs)
+        return jsonify({
+            "success": -1,
+            "msg": "Unauthorized, please verify your email first"}), 401
+    return decorated

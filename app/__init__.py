@@ -15,6 +15,7 @@ from .users import user_bp
 from .auth import auth_bp
 from .prompts import prompt_bp
 from .group import group_bp
+from .transaction import transaction_bp
 
 
 from .command import init_db_command, migrate_command
@@ -47,6 +48,7 @@ app.register_blueprint(user_bp, url_prefix="/users")
 app.register_blueprint(auth_bp, url_prefix="/auth")
 app.register_blueprint(prompt_bp, url_prefix="/prompts")
 app.register_blueprint(group_bp, url_prefix="/groups")
+app.register_blueprint(transaction_bp, url_prefix="/transactions")
 
 
 
