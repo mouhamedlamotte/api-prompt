@@ -17,14 +17,14 @@ from constant import FLASK_SECRET_KEY
 user_bp = Blueprint("users", __name__)
 
 
-@user_bp.route("/users", methods=["GET"])
+@user_bp.route("/", methods=["GET"])
 @jwt_required()
 @superuser_required
 def get_users():
     users = db.get_data_table("users")
     return jsonify(users), 200
 
-@user_bp.route("/users", methods=["POST"])
+@user_bp.route("/new", methods=["POST"])
 def create_user():
     try :
         data =  request.get_json()

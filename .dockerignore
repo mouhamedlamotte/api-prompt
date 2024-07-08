@@ -1,0 +1,11 @@
+.venv
+.env
+**/__pycache__/
+**/**/__pycache__/
+__pycache__
+sql/
+sql
+/sql
+.vscode
+prompts/script.js
+queries.sql

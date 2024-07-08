@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEBUG = os.getenv("DEBUG") or False
+DEBUG = False if os.getenv("ENV") == "dev" else True
 
 FLASK_SECRET_KEY=os.getenv("FLASK_SECRET_KEY") or "secret"
 

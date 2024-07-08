@@ -14,6 +14,8 @@ prompt_bp = Blueprint("prompt", __name__)
 @prompt_bp.route("/",methods=["GET"])
 @jwt_required()
 def get_prompt(): 
+    if request.method == 'OPTIONS':
+        return '', 204
     res = db.get_data_table("prompts")
     return jsonify(res), 200
     
