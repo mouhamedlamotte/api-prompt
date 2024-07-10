@@ -1,3 +1,10 @@
+CREATE SCHEMA auth;
+
+CREATE SCHEMA users;
+
+
+
+
 CREATE TABLE IF NOT EXISTS users(
             uid SERIAL PRIMARY KEY,
             email VARCHAR(250) UNIQUE NOT NULL,
@@ -73,3 +80,4 @@ CREATE TABLE IF NOT EXISTS notes(
 );
 
 
+SELECT is_superuser FROM users WHERE uid = 7

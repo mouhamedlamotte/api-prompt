@@ -5,9 +5,6 @@ from constant import  POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB
 
 from psycopg.rows import dict_row
 
-
-
-
 class Postgres() :
     def __init__(self) -> None:
         self.connect =  psycopg.connect(
@@ -242,9 +239,7 @@ class Postgres() :
         except Exception as e :
             print("Une erreur s'est produite dans la fonction update_prompt_state de la classe postgres ==> \n", e)
             return False
-    
-        
-    
+     
     def update_prompt_price(self, prompt_id, price):
         try :
             query = """UPDATE prompts SET price = %s WHERE prompt_id = %s"""
@@ -266,4 +261,30 @@ class Postgres() :
             return True
         except Exception as e :
             print("Une erreur s'est produite dans la fonction add_transaction de la classe postgres ==> \n", e)
+            return False
+    
+    def get_table_count(self, table_name):
+        try :
+            query = f"""SELECT COUNT(*) FROM {table_name}"""
+            self.cursor.execute(query)
+            return self.cursor.fetchone().get("count")
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_sum_analytics_tables de la classe postgres ==> \n", e)
+            return False
+    
+    def get_recent_transactions(self):
+        try :
+            query = """SELECT * FROM transactions ORDER BY created_at DESC LIMIT 10"""
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_transactions de la classe postgres ==> \n", e)
+            return False
+    def get_sum_transactions(self):
+        try :
+            query = """SELECT SUM(amount) FROM transactions"""
+            self.cursor.execute(query)
+            return self.cursor.fetchone()
+        except Exception as e :
+            print("Une erreur s'est produite dans la fonction get_sum_transactions de la classe postgres ==> \n", e)
             return False

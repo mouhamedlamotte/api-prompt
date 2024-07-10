@@ -13,3 +13,8 @@ CREATE TABLE IF NOT EXISTS transactions(
     updated_at TIMESTAMP,
     CONSTRAINT fk_prompt_id FOREIGN KEY(prompt_id) REFERENCES prompts(prompt_id)
 );
+
+CREATE TYPE transaction_state as  ENUM ('pending', 'paid', 'cancelled');
+
+ALTER TABLE transactions
+    ADD COLUMN IF NOT exists state transaction_state NOT NULL DEFAULT 'pending';

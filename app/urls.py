@@ -2,7 +2,8 @@ from .users import user_bp
 from .auth import auth_bp
 from .prompts import prompt_bp
 from .groups import group_bp
-from .payement import transaction_bp
+from .transactions import transaction_bp
+from .analytics import analytics_bp
 
 urlpatterns = [
     {
@@ -24,6 +25,10 @@ urlpatterns = [
     {
         "prefix": "/transactions",
         "blueprint": transaction_bp
+    },
+    {
+        "prefix": "/analytics",
+        "blueprint": analytics_bp
     }
 ]
 

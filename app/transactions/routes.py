@@ -17,6 +17,7 @@ def buy_prompt():
             "success": -1,
             "msg": "prompt_id is required"
         }), 400
+    
     prompt_id = data.get("prompt_id")
     prompt = db.get_prompt_by_id(prompt_id)
     if not prompt:
@@ -59,9 +60,7 @@ def buy_prompt():
         <h4>
             PROMPT : {prompt.get("title")}
         </h4>
-        <p>
-            {prompt.get("text")}
-        </p>
+        <button style="background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%;">Payer le prompt</button>
         </div>
         """
     })

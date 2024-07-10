@@ -1,21 +1,24 @@
-import base64
-import hashlib
-import bcrypt
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from app.auth.authorization.decorators import staff_required
 from app.lib import db
 
 
 
 prompt_bp = Blueprint("prompt", __name__)
 @prompt_bp.route("/",methods=["GET"])
-@jwt_required()
+# @jwt_required()
 def get_prompt(): 
     if request.method == 'OPTIONS':
-        return '', 204
+        response = prompt_bp.make_default_options_response()
+        headers = response.headers
+
+        headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        headers['Access-Control-Allow-Methods'] = 'DELETE, GET, POST, PUT, OPTIONS'
+        headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+
+        return response
+
     res = db.get_data_table("prompts")
     return jsonify(res), 200
     
@@ -173,3 +176,35 @@ def create_note():
     except Exception as e :
         print(f"Erreur lors de la création des données: {e}")
         return jsonify({"message": "Une erreur s'est produite lors de la création des données."}), 500
+    
+@prompt_bp.route("/votes", methods=["GET"])
+@jwt_required()
+def update_prompt_state():
+    try:
+        data =  request.get_json()
+        if not data.get("prompt_id") and not data.get("state"):
+            return jsonify({
+                "success" : -1,
+                "msg" : "Prompt id (prompt_id) are required"
+            }), 403
+        check_if_prompt_exist = db.get_prompt_by_id(data.get("prompt_id"))
+        if not check_if_prompt_exist :
+            return jsonify({
+                "success" : -1,
+                "msg" : "Prompt does not exist"
+            }), 403
+        res = db.update_prompt_state(data.get("prompt_id"), data.get("state"))
+        if res[0] == False:
+            return jsonify({
+                "success" : -1,
+                "msg" : res[1]
+            })
+        return jsonify({
+                "success" : 1,
+                "msg" : "Le vote a ete cree avec success"
+            }), 200
+    except Exception as e:
+        print(f"Erreur lors de la création des données: {e}")
+        return jsonify({"message": "Une erreur s'est produite lors de la création des données."}), 500
+    
+    
